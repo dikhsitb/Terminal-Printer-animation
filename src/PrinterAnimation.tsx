@@ -1,8 +1,13 @@
-import { useCallback, useRef, useEffect, useState } from 'react'
+import { useCallback, useRef, useLayoutEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import gsap from 'gsap'
 import receiptBgUrl from './assets/receipt_bg.svg'
+import billBgUrl from './assets/Bill.svg'
 import receiptDividerUrl from './assets/receipt_divider.svg'
+
+// Receipt background variants — swap RECEIPT_BG to A/B compare the two assets.
+const RECEIPT_BACKGROUNDS = { bill: billBgUrl, classic: receiptBgUrl }
+const RECEIPT_BG = RECEIPT_BACKGROUNDS.bill
 
 /* ─────────────────────────────────────────────────────────────
  * STORYBOARD
@@ -34,22 +39,28 @@ const T = {
 const PW     = 460
 const BODY_H = Math.round(460 * 273 / 915)  // 137
 
-// Receipt (Figma: 742×1066 at left=88, top=202 in printer frame)
+// Receipt (Figma: 742px wide at left=88, top=202 in printer frame)
+// The inner canvas is rendered at native size then scaled by R_SCALE. Its height
+// is driven by the receipt content (restaurant bill) — the bg SVG uses
+// preserveAspectRatio="none" so it stretches to fill the taller canvas.
 const R_TOP     = Math.round(202 * 460 / 915)  // 102
 const R_LEFT    = Math.round(88  * 460 / 915)  // 44
 const R_W       = Math.round(742 * 460 / 915)  // 373
-const R_H       = Math.round(1066 * 460 / 915) // 536
 const R_INNER_W = 741
-const R_INNER_H = 1065
-const R_SCALE   = R_W / R_INNER_W             // ≈ 0.5034
+const R_INNER_H = 1290
+const R_SCALE   = R_W / R_INNER_W                 // ≈ 0.5034
+const R_H       = Math.round(R_INNER_H * R_SCALE) // ≈ 649
 
-// Initial translateY: receipt mostly inside printer (only ~13px peeks below slot)
-// Figma initial top=-768 → in 460px scale: -768×(460/915)=-386; offset by R_TOP: -386-102=-488
-const RECEIPT_INIT_Y = -488
+// Initial translateY: receipt mostly inside printer (only its bottom edge peeks
+// ~13px below the slot). Keep the printed bottom just below the printer body,
+// then shift up by the full receipt height so the rest stays hidden above.
+const RECEIPT_INIT_Y = (BODY_H + 13) - (R_TOP + R_H)  // ≈ -601
 
 // Content area margin-top in each phase (leaves room for receipt when out)
 const CONTENT_MT_IDLE = 300
-const CONTENT_MT_DONE = R_H - BODY_H + 24  // 423
+// Place done-phase content fully below the printed receipt:
+// receipt spans R_TOP→R_TOP+R_H within the assembly; add float + gap, subtract printer body height
+const CONTENT_MT_DONE = R_TOP + R_H - BODY_H + T.floatY + 24  // 533
 
 // ─── Colors ────────────────────────────────────────────────
 const PAGE_BG = '#ffffff'
@@ -100,83 +111,93 @@ function Divider() {
   )
 }
 
-// ─── Payslip receipt (renders at Figma's 741×1065 then scaled) ─
-function PayslipReceipt() {
+// ─── Restaurant receipt (renders at Figma's 741×1290 then scaled) ─
+function ReceiptContent() {
   const S = SATOSHI
   return (
     <div style={{ position: 'relative', width: R_INNER_W, height: R_INNER_H }}>
-      <img src={receiptBgUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
+      <img src={RECEIPT_BG} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
 
       {/* Header */}
       <div style={{ position: 'absolute', left: 24.55, top: 62.01, width: 691.9, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <p style={{ ...S, fontWeight: 500, fontSize: 24.547, lineHeight: '33.75px', letterSpacing: '-0.31px', color: '#181b25', width: 276 }}>
-          Payslip — PS-2026-001
+        <p style={{ ...S, fontWeight: 500, fontSize: 31.786, lineHeight: '43.703px', letterSpacing: '-0.31px', color: '#181b25' }}>
+          Receipt — ORD-2026-001
         </p>
         <div style={{ background: 'white', border: '1.53px solid #e1e4ea', borderRadius: 6, padding: '6.14px 12.27px' }}>
-          <p style={{ ...S, fontWeight: 500, fontSize: 18.41, lineHeight: '24.55px', letterSpacing: '-0.2px', color: '#525866', whiteSpace: 'nowrap' }}>
+          <p style={{ ...S, fontWeight: 500, fontSize: 19.866, lineHeight: '26.492px', letterSpacing: '-0.2px', color: '#525866', whiteSpace: 'nowrap' }}>
             Jun 19, 2026
           </p>
         </div>
       </div>
 
-      {/* Employee / Employer card */}
-      <div style={{ position: 'absolute', left: 24.55, top: 123.38, width: 691.9, background: 'linear-gradient(to bottom, rgba(233,233,255,0.2), rgba(204,229,241,0.2))', borderRadius: 18.41, padding: 24.55, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12.27, width: 230 }}>
-          <p style={{ ...S, fontWeight: 500, fontSize: 18.41, lineHeight: '24.55px', letterSpacing: '1.53px', color: '#525866' }}>Employee</p>
+      {/* Customer / Restaurant card */}
+      <div style={{ position: 'absolute', left: 24.55, top: 123.38, width: 691.9, background: 'linear-gradient(174.4deg, rgba(129,255,138,0.18) 25%, rgba(100,150,94,0.18) 106%)', borderRadius: 18.41, padding: 24.55, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12.27, width: 300 }}>
+          <p style={{ ...S, fontWeight: 500, fontSize: 19.866, lineHeight: '27.813px', letterSpacing: '0px', color: '#374151' }}>Customer</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6.14 }}>
-            <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>Dikhsit Bhattarai</p>
-            <p style={{ ...S, fontWeight: 400, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#525866' }}>Senior Software Engineer</p>
-            <p style={{ ...S, fontWeight: 500, fontSize: 18.41, lineHeight: '24.55px', letterSpacing: '-0.31px', color: '#525866' }}>EMP-1001</p>
+            <p style={{ ...S, fontWeight: 500, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#181b25' }}>Dikhsit Bhattarai</p>
+            <p style={{ ...S, fontWeight: 400, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#525866' }}>Table 08</p>
+            <p style={{ ...S, fontWeight: 400, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#525866' }}>Server: Alex</p>
+            <p style={{ ...S, fontWeight: 500, fontSize: 19.866, lineHeight: '26.492px', letterSpacing: '-0.31px', color: '#525866' }}>Order #1001</p>
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12.27, width: 230, alignItems: 'flex-end' }}>
-          <p style={{ ...S, fontWeight: 500, fontSize: 18.41, lineHeight: '24.55px', letterSpacing: '1.53px', color: '#525866' }}>Employer</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12.27, width: 330, alignItems: 'flex-end' }}>
+          <p style={{ ...S, fontWeight: 500, fontSize: 19.866, lineHeight: '26.492px', letterSpacing: '1.53px', color: '#525866' }}>Restaurant</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6.14, alignItems: 'flex-end' }}>
-            <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>TechVentures Ltd</p>
-            <p style={{ ...S, fontWeight: 400, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#525866' }}>MG Road, Bangalore</p>
-            <p style={{ ...S, fontWeight: 500, fontSize: 18.41, lineHeight: '24.55px', letterSpacing: '-0.31px', color: '#525866' }}>TIN-0012345678</p>
+            <p style={{ ...S, fontWeight: 500, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#181b25' }}>The Urban Fork</p>
+            <p style={{ ...S, fontWeight: 400, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#525866' }}>MG Road, Bangalore</p>
+            <p style={{ ...S, fontWeight: 500, fontSize: 19.866, lineHeight: '26.492px', letterSpacing: '-0.31px', color: '#525866', whiteSpace: 'nowrap' }}>GSTIN: 29ABCDE1234F1Z5</p>
           </div>
         </div>
       </div>
 
-      {/* Earnings */}
-      <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 332.02, width: 691.9, display: 'flex', flexDirection: 'column', gap: 12.27 }}>
-        <p style={{ ...S, fontWeight: 500, fontSize: 18.41, lineHeight: '24.55px', letterSpacing: '1.53px', color: '#525866' }}>Earnings</p>
-        {([['Basic Salary','₹850,000'],['Housing Allowance','₹250,000'],['Transport Allowance','₹120,000'],['Overtime','₹45,000']] as [string,string][]).map(([l,v]) => (
-          <div key={l} style={{ display: 'flex', justifyContent: 'space-between', whiteSpace: 'nowrap', height: 30.68 }}>
-            <p style={{ ...S, fontWeight: 400, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#525866' }}>{l}</p>
-            <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>{v}</p>
-          </div>
-        ))}
-        <Divider />
-        <div style={{ display: 'flex', justifyContent: 'space-between', whiteSpace: 'nowrap', height: 30.68 }}>
-          <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>Gross Pay</p>
-          <p style={{ ...S, fontWeight: 700, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>₹1,265,000</p>
-        </div>
-        <Divider />
-      </div>
-
-      {/* Deductions */}
-      <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 620.45, width: 691.9, display: 'flex', flexDirection: 'column', gap: 12.27 }}>
-        <p style={{ ...S, fontWeight: 500, fontSize: 18.41, lineHeight: '24.55px', letterSpacing: '1.53px', color: '#525866' }}>Statutory Deductions</p>
-        {([['PAYE Tax','-₹142,500'],['Pension (Employee 8%)','-₹68,000'],['NHF (2.5%)','-₹21,250'],['Health Insurance','-₹15,000']] as [string,string][]).map(([l,v]) => (
-          <div key={l} style={{ display: 'flex', justifyContent: 'space-between', whiteSpace: 'nowrap', height: 30.68 }}>
-            <p style={{ ...S, fontWeight: 400, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#525866' }}>{l}</p>
-            <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>{v}</p>
+      {/* Items */}
+      <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 378, width: 691.9, display: 'flex', flexDirection: 'column', gap: 12.27 }}>
+        <p style={{ ...S, fontWeight: 500, fontSize: 19.866, lineHeight: '27.813px', letterSpacing: '0px', color: '#374151' }}>Items</p>
+        {([['Margherita Pizza (Large)','₹650'],['Grilled Chicken Steak','₹850'],['Garlic Bread','₹220'],['Fresh Lime Soda ×2','₹300'],['Chocolate Brownie','₹280']] as [string,string][]).map(([l,v]) => (
+          <div key={l} style={{ display: 'flex', justifyContent: 'space-between', whiteSpace: 'nowrap', height: 34.051 }}>
+            <p style={{ ...S, fontWeight: 400, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#525866' }}>{l}</p>
+            <p style={{ ...S, fontWeight: 500, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#181b25' }}>{v}</p>
           </div>
         ))}
         <Divider />
-        <div style={{ display: 'flex', justifyContent: 'space-between', whiteSpace: 'nowrap', height: 30.68 }}>
-          <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>Total Deductions</p>
-          <p style={{ ...S, fontWeight: 700, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>-₹246,750</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', whiteSpace: 'nowrap', height: 34.051 }}>
+          <p style={{ ...S, fontWeight: 500, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#181b25' }}>Subtotal</p>
+          <p style={{ ...S, fontWeight: 700, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#181b25' }}>₹2,300</p>
         </div>
         <Divider />
       </div>
 
-      {/* Net Pay */}
-      <div style={{ position: 'absolute', left: 24.55, top: 921.14, width: 691.9, background: 'linear-gradient(174.4deg, rgba(93,208,231,0.15) 25%, rgba(115,0,255,0.15) 106%)', borderRadius: 18.41, padding: 24.55, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>Net Pay</p>
-        <p style={{ ...S, fontWeight: 700, fontSize: 24.547, lineHeight: '33.75px', letterSpacing: '-0.31px', color: '#181b25', whiteSpace: 'nowrap' }}>₹1,018,250</p>
+      {/* Taxes & Charges */}
+      <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 728, width: 691.9, display: 'flex', flexDirection: 'column', gap: 12.27 }}>
+        <p style={{ ...S, fontWeight: 500, fontSize: 19.866, lineHeight: '27.813px', letterSpacing: '0px', color: '#374151' }}>Taxes &amp; Charges</p>
+        {([['GST (5%)','₹115'],['Service Charge (10%)','₹230'],['Packaging','₹50']] as [string,string][]).map(([l,v]) => (
+          <div key={l} style={{ display: 'flex', justifyContent: 'space-between', whiteSpace: 'nowrap', height: 34.051 }}>
+            <p style={{ ...S, fontWeight: 400, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#525866' }}>{l}</p>
+            <p style={{ ...S, fontWeight: 500, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#181b25' }}>{v}</p>
+          </div>
+        ))}
+        <Divider />
+        <div style={{ display: 'flex', justifyContent: 'space-between', whiteSpace: 'nowrap', height: 34.051 }}>
+          <p style={{ ...S, fontWeight: 500, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#181b25' }}>Total Charges</p>
+          <p style={{ ...S, fontWeight: 700, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#181b25' }}>₹395</p>
+        </div>
+        <Divider />
+      </div>
+
+      {/* Payment */}
+      <div style={{ position: 'absolute', left: 24.55, top: 988, width: 691.9, background: 'linear-gradient(174.4deg, rgba(129,255,138,0.18) 25%, rgba(100,150,94,0.18) 106%)', borderRadius: 18.41, padding: 24.55, display: 'flex', flexDirection: 'column', gap: 12.27 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', whiteSpace: 'nowrap' }}>
+          <p style={{ ...S, fontWeight: 500, fontSize: 31.786, lineHeight: '43.703px', letterSpacing: '-0.31px', color: '#181b25' }}>Grand Total</p>
+          <p style={{ ...S, fontWeight: 700, fontSize: 31.786, lineHeight: '43.703px', letterSpacing: '-0.31px', color: '#181b25' }}>₹2,695</p>
+        </div>
+        <Divider />
+        {([['Amount Paid','₹2,695'],['Payment Method','UPI'],['Status','Paid ✓']] as [string,string][]).map(([l,v]) => (
+          <div key={l} style={{ display: 'flex', justifyContent: 'space-between', whiteSpace: 'nowrap', height: 34.051 }}>
+            <p style={{ ...S, fontWeight: 400, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#525866' }}>{l}</p>
+            <p style={{ ...S, fontWeight: 500, fontSize: 23.84, lineHeight: '34.051px', letterSpacing: '-0.31px', color: '#181b25' }}>{v}</p>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -305,9 +326,13 @@ export function PrinterAnimation() {
   const receiptRef = useRef<HTMLDivElement>(null)
   const tlRef      = useRef<gsap.core.Timeline | null>(null)
 
-  // Set receipt to initial position on mount
-  useEffect(() => {
-    if (receiptRef.current) gsap.set(receiptRef.current, { y: RECEIPT_INIT_Y })
+  // Tuck the receipt into the printer before first paint, then reveal it only
+  // after the printer has animated in (so the printer loads before the bill).
+  useLayoutEffect(() => {
+    const el = receiptRef.current
+    if (!el) return
+    gsap.set(el, { y: RECEIPT_INIT_Y, autoAlpha: 0 })
+    gsap.to(el, { autoAlpha: 1, duration: 0.45, ease: 'power2.out', delay: T.printerDelay + 0.2 })
   }, [])
 
   const startPrint = useCallback(() => {
@@ -321,9 +346,9 @@ export function PrinterAnimation() {
     tlRef.current?.kill()
     gsap.set(el, { y: RECEIPT_INIT_Y })
 
-    const tl = gsap.timeline({ onComplete: () => setPhase('done') })
-    tl.to(el, { y: 0, duration: T.feedDuration, ease: 'power2.out', delay: T.feedDelay })
-    tl.to(el, { y: T.floatY, duration: T.floatDuration, ease: 'sine.inOut', yoyo: true, repeat: -1 }, '>0.2')
+    // Feed the receipt out, then leave it at rest (no floating loop).
+    const tl = gsap.timeline()
+    tl.to(el, { y: 0, duration: T.feedDuration, ease: 'power2.out', delay: T.feedDelay, onComplete: () => setPhase('done') })
     tlRef.current = tl
   }, [phase])
 
@@ -351,14 +376,18 @@ export function PrinterAnimation() {
           background: PAGE_BG, zIndex: 15, pointerEvents: 'none',
         }} />
 
-        {/* Receipt: z:10, initial y=-488 so only bottom scallop peeks */}
+        {/* Receipt: z:10, starts tucked into the printer (only bottom scallop peeks).
+            Initial transform/opacity are set inline so the first paint is already
+            correct — otherwise the full bill would flash before the printer loads. */}
         <div ref={receiptRef} style={{
           position: 'absolute', top: R_TOP, left: R_LEFT,
           width: R_W, height: R_H, zIndex: 10,
+          transform: `translateY(${RECEIPT_INIT_Y}px)`,
+          opacity: 0, visibility: 'hidden',
           filter: 'drop-shadow(0 12px 32px rgba(0,0,0,0.13)) drop-shadow(0 3px 8px rgba(0,0,0,0.07))',
         }}>
           <div style={{ width: R_INNER_W, height: R_INNER_H, transform: `scale(${R_SCALE})`, transformOrigin: 'top left' }}>
-            <PayslipReceipt />
+            <ReceiptContent />
           </div>
         </div>
 
@@ -369,15 +398,15 @@ export function PrinterAnimation() {
           transition={{ type: 'spring', stiffness: 200, damping: 22, delay: T.printerDelay }}
           style={{
             position: 'absolute', top: 0, left: 0, zIndex: 20, lineHeight: 0,
-            filter: 'drop-shadow(0 24px 52px rgba(120,140,220,0.30)) drop-shadow(0 6px 16px rgba(0,0,0,0.10))',
+            filter: 'drop-shadow(0 24px 52px rgba(110,210,130,0.30)) drop-shadow(0 6px 16px rgba(0,0,0,0.10))',
           }}
         >
           <svg width={PW} height={BODY_H} viewBox="0 0 915 273" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
             <defs>
               <linearGradient id="printerBodyGrad" x1="0" y1="0" x2="0" y2="273" gradientUnits="userSpaceOnUse">
-                <stop offset="0%"   stopColor="#e9e9ff" />
-                <stop offset="38%"  stopColor="#dde8fb" />
-                <stop offset="100%" stopColor="#cce5f1" />
+                <stop offset="0%"   stopColor="#e9ffe9" />
+                <stop offset="38%"  stopColor="#d2f5d8" />
+                <stop offset="100%" stopColor="#b5e8bf" />
               </linearGradient>
               <radialGradient id="printerSatin" cx="50%" cy="18%" rx="39%" ry="29%">
                 <stop offset="0%"  stopColor="rgba(255,255,255,0.60)" />
@@ -416,26 +445,6 @@ export function PrinterAnimation() {
               transition={{ duration: 0.28 }}
               style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 39 }}
             >
-              {/* "Payment successfully" text */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'center', width: '100%' }}>
-                <h1 style={{
-                  ...INTER, fontWeight: 600, fontSize: 24,
-                  lineHeight: 1, letterSpacing: '-0.2px',
-                  color: '#171717', margin: 0, textAlign: 'center',
-                  fontFeatureSettings: "'ss11' 1, 'calt' 0, 'liga' 0",
-                  textWrap: 'balance',
-                } as React.CSSProperties}>
-                  Payment successful
-                </h1>
-                <p style={{
-                  ...INTER, fontWeight: 400, fontSize: 14,
-                  lineHeight: '22px', letterSpacing: '-0.084px',
-                  color: '#5c5c5c', margin: 0, textAlign: 'center',
-                  fontFeatureSettings: "'calt' 0, 'liga' 0",
-                }}>
-                  Your payment for Dikhsit Bhattarai was successful, now let's roll
-                </p>
-              </div>
               {/* Slide button */}
               <SlideButton onComplete={startPrint} />
             </motion.div>
@@ -457,8 +466,28 @@ export function PrinterAnimation() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.2 }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}
             >
+              {/* "Payment successful" text — shown after printing completes */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'center', width: '100%' }}>
+                <h1 style={{
+                  ...INTER, fontWeight: 600, fontSize: 24,
+                  lineHeight: 1, letterSpacing: '-0.2px',
+                  color: '#171717', margin: 0, textAlign: 'center',
+                  fontFeatureSettings: "'ss11' 1, 'calt' 0, 'liga' 0",
+                  textWrap: 'balance',
+                } as React.CSSProperties}>
+                  Payment successful
+                </h1>
+                <p style={{
+                  ...INTER, fontWeight: 400, fontSize: 14,
+                  lineHeight: '22px', letterSpacing: '-0.084px',
+                  color: '#5c5c5c', margin: 0, textAlign: 'center',
+                  fontFeatureSettings: "'calt' 0, 'liga' 0",
+                }}>
+                  Your payment for Dikhsit Bhattarai was successful, now let's roll
+                </p>
+              </div>
               <motion.button
                 onClick={replay}
                 whileHover={{ scale: 1.04 }}
