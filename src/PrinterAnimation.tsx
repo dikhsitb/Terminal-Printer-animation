@@ -4,6 +4,7 @@ import gsap from 'gsap'
 import receiptBgUrl from './assets/receipt_bg.svg'
 import billBgUrl from './assets/Bill.svg'
 import receiptDividerUrl from './assets/receipt_divider.svg'
+import printSoundUrl from './assets/print-sound.mp3'
 
 // Receipt background variants — swap RECEIPT_BG to A/B compare the two assets.
 const RECEIPT_BACKGROUNDS = { bill: billBgUrl, classic: receiptBgUrl }
@@ -29,8 +30,9 @@ type Phase = 'idle' | 'printing' | 'done'
 // ─── Timing ────────────────────────────────────────────────
 const T = {
   printerDelay:  0.06,   // s
-  feedDelay:     0.2,    // s — small pause before receipt moves
-  feedDuration:  1.5,    // s — receipt travel
+  feedDelay:     0.3,    // s — printing starts 0.3s after the sound begins
+  feedDuration:  3.5,    // s — receipt travel
+  contentShift:  1.5,    // s — content/button area slide (independent of print speed)
   floatY:        8,      // px
   floatDuration: 2.0,    // s
 }
@@ -69,34 +71,32 @@ const SATOSHI: React.CSSProperties = { fontFamily: "'Satoshi', sans-serif" }
 const INTER:   React.CSSProperties = { fontFamily: "'Inter', sans-serif" }
 
 // ─── Sound ─────────────────────────────────────────────────
+const PRINT_VOLUME = 0.35   // reduced playback volume
+const FADE_OUT      = 1.0   // s — gentle fade as the printer stops
+
 function playPrintSound(duration = 1.7) {
   try {
-    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-    const ctx = new Ctx()
+    const audio = new Audio(printSoundUrl)
+    audio.currentTime = 0
+    audio.volume = PRINT_VOLUME
+    audio.play().catch(() => { /* autoplay blocked until user gesture */ })
 
-    const len = Math.floor(ctx.sampleRate * duration)
-    const buf = ctx.createBuffer(1, len, ctx.sampleRate)
-    const d   = buf.getChannelData(0)
-    for (let i = 0; i < len; i++) {
-      // Slight modulation to simulate paper feed rhythm
-      d[i] = (Math.random() * 2 - 1) * (0.4 + 0.25 * Math.sin(i / ctx.sampleRate * Math.PI * 18))
-    }
-
-    const src = ctx.createBufferSource()
-    src.buffer = buf
-
-    const lp  = ctx.createBiquadFilter()
-    lp.type = 'lowpass'; lp.frequency.value = 1100
-
-    const gain = ctx.createGain()
-    const t0   = ctx.currentTime
-    gain.gain.setValueAtTime(0, t0)
-    gain.gain.linearRampToValueAtTime(0.18, t0 + 0.08)
-    gain.gain.setValueAtTime(0.18, t0 + duration - 0.25)
-    gain.gain.linearRampToValueAtTime(0, t0 + duration)
-
-    src.connect(lp); lp.connect(gain); gain.connect(ctx.destination)
-    src.start(); src.stop(t0 + duration)
+    // When the feed finishes, fade the volume to 0 over FADE_OUT, then stop.
+    window.setTimeout(() => {
+      const start = performance.now()
+      const from  = audio.volume
+      const tick = () => {
+        const t = (performance.now() - start) / (FADE_OUT * 1000)
+        if (t >= 1) {
+          audio.pause()
+          audio.currentTime = 0
+          return
+        }
+        audio.volume = from * (1 - t)
+        requestAnimationFrame(tick)
+      }
+      requestAnimationFrame(tick)
+    }, duration * 1000)
   } catch { /* audio not available */ }
 }
 
@@ -432,7 +432,7 @@ export function PrinterAnimation() {
       {/* ── Content area: shifts down as receipt emerges ────── */}
       <motion.div
         animate={{ marginTop: phase === 'done' ? CONTENT_MT_DONE : CONTENT_MT_IDLE }}
-        transition={{ duration: T.feedDuration, ease: [0.25, 0, 0.35, 1], delay: phase === 'printing' ? T.feedDelay : 0 }}
+        transition={{ duration: T.contentShift, ease: [0.25, 0, 0.35, 1], delay: phase === 'printing' ? T.feedDelay : 0 }}
         style={{ width: 344, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}
       >
         <AnimatePresence mode="wait">
