@@ -73,26 +73,44 @@ const INTER:   React.CSSProperties = { fontFamily: "'Inter', sans-serif" }
 // ─── Sound ─────────────────────────────────────────────────
 const PRINT_VOLUME = 0.35   // reduced playback volume
 const FADE_OUT      = 1.0   // s — gentle fade as the printer stops
+const SOUND_START   = 0.0   // s — skip leading silence in the clip (raise if it lags)
+
+// Preload a single element at module load so the first play has no
+// fetch/decode lag (a fresh `new Audio()` per print buffers before it plays).
+const printAudio: HTMLAudioElement | null =
+  typeof Audio !== 'undefined' ? new Audio(printSoundUrl) : null
+if (printAudio) {
+  printAudio.preload = 'auto'
+  printAudio.load()
+}
+
+// Token guards against stale fade loops when printing is replayed quickly.
+let fadeToken = 0
 
 function playPrintSound(duration = 1.7) {
+  if (!printAudio) return
   try {
-    const audio = new Audio(printSoundUrl)
-    audio.currentTime = 0
-    audio.volume = PRINT_VOLUME
-    audio.play().catch(() => { /* autoplay blocked until user gesture */ })
+    fadeToken += 1
+    const token = fadeToken
+
+    printAudio.currentTime = SOUND_START
+    printAudio.volume = PRINT_VOLUME
+    void printAudio.play().catch(() => { /* autoplay blocked until user gesture */ })
 
     // When the feed finishes, fade the volume to 0 over FADE_OUT, then stop.
     window.setTimeout(() => {
+      if (token !== fadeToken) return
       const start = performance.now()
-      const from  = audio.volume
+      const from  = printAudio.volume
       const tick = () => {
+        if (token !== fadeToken) return
         const t = (performance.now() - start) / (FADE_OUT * 1000)
         if (t >= 1) {
-          audio.pause()
-          audio.currentTime = 0
+          printAudio.pause()
+          printAudio.currentTime = SOUND_START
           return
         }
-        audio.volume = from * (1 - t)
+        printAudio.volume = from * (1 - t)
         requestAnimationFrame(tick)
       }
       requestAnimationFrame(tick)
