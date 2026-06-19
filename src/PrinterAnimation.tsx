@@ -114,7 +114,7 @@ function PayslipReceipt() {
         </p>
         <div style={{ background: 'white', border: '1.53px solid #e1e4ea', borderRadius: 6, padding: '6.14px 12.27px' }}>
           <p style={{ ...S, fontWeight: 500, fontSize: 18.41, lineHeight: '24.55px', letterSpacing: '-0.2px', color: '#525866', whiteSpace: 'nowrap' }}>
-            Feb 1 — Feb 28, 2026
+            Jun 19, 2026
           </p>
         </div>
       </div>
@@ -124,7 +124,7 @@ function PayslipReceipt() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12.27, width: 230 }}>
           <p style={{ ...S, fontWeight: 500, fontSize: 18.41, lineHeight: '24.55px', letterSpacing: '1.53px', color: '#525866' }}>Employee</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6.14 }}>
-            <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>Amina Okafor</p>
+            <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>Dikhsit Bhattarai</p>
             <p style={{ ...S, fontWeight: 400, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#525866' }}>Senior Software Engineer</p>
             <p style={{ ...S, fontWeight: 500, fontSize: 18.41, lineHeight: '24.55px', letterSpacing: '-0.31px', color: '#525866' }}>EMP-1001</p>
           </div>
@@ -133,7 +133,7 @@ function PayslipReceipt() {
           <p style={{ ...S, fontWeight: 500, fontSize: 18.41, lineHeight: '24.55px', letterSpacing: '1.53px', color: '#525866' }}>Employer</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6.14, alignItems: 'flex-end' }}>
             <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>TechVentures Ltd</p>
-            <p style={{ ...S, fontWeight: 400, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#525866' }}>14 Broad St, Lagos</p>
+            <p style={{ ...S, fontWeight: 400, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#525866' }}>MG Road, Bangalore</p>
             <p style={{ ...S, fontWeight: 500, fontSize: 18.41, lineHeight: '24.55px', letterSpacing: '-0.31px', color: '#525866' }}>TIN-0012345678</p>
           </div>
         </div>
@@ -142,7 +142,7 @@ function PayslipReceipt() {
       {/* Earnings */}
       <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 332.02, width: 691.9, display: 'flex', flexDirection: 'column', gap: 12.27 }}>
         <p style={{ ...S, fontWeight: 500, fontSize: 18.41, lineHeight: '24.55px', letterSpacing: '1.53px', color: '#525866' }}>Earnings</p>
-        {([['Basic Salary','₦850,000'],['Housing Allowance','₦250,000'],['Transport Allowance','₦120,000'],['Overtime','₦45,000']] as [string,string][]).map(([l,v]) => (
+        {([['Basic Salary','₹850,000'],['Housing Allowance','₹250,000'],['Transport Allowance','₹120,000'],['Overtime','₹45,000']] as [string,string][]).map(([l,v]) => (
           <div key={l} style={{ display: 'flex', justifyContent: 'space-between', whiteSpace: 'nowrap', height: 30.68 }}>
             <p style={{ ...S, fontWeight: 400, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#525866' }}>{l}</p>
             <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>{v}</p>
@@ -151,7 +151,7 @@ function PayslipReceipt() {
         <Divider />
         <div style={{ display: 'flex', justifyContent: 'space-between', whiteSpace: 'nowrap', height: 30.68 }}>
           <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>Gross Pay</p>
-          <p style={{ ...S, fontWeight: 700, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>₦1,265,000</p>
+          <p style={{ ...S, fontWeight: 700, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>₹1,265,000</p>
         </div>
         <Divider />
       </div>
@@ -159,7 +159,7 @@ function PayslipReceipt() {
       {/* Deductions */}
       <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 620.45, width: 691.9, display: 'flex', flexDirection: 'column', gap: 12.27 }}>
         <p style={{ ...S, fontWeight: 500, fontSize: 18.41, lineHeight: '24.55px', letterSpacing: '1.53px', color: '#525866' }}>Statutory Deductions</p>
-        {([['PAYE Tax','-₦142,500'],['Pension (Employee 8%)','-₦68,000'],['NHF (2.5%)','-₦21,250'],['Health Insurance','-₦15,000']] as [string,string][]).map(([l,v]) => (
+        {([['PAYE Tax','-₹142,500'],['Pension (Employee 8%)','-₹68,000'],['NHF (2.5%)','-₹21,250'],['Health Insurance','-₹15,000']] as [string,string][]).map(([l,v]) => (
           <div key={l} style={{ display: 'flex', justifyContent: 'space-between', whiteSpace: 'nowrap', height: 30.68 }}>
             <p style={{ ...S, fontWeight: 400, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#525866' }}>{l}</p>
             <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>{v}</p>
@@ -168,7 +168,7 @@ function PayslipReceipt() {
         <Divider />
         <div style={{ display: 'flex', justifyContent: 'space-between', whiteSpace: 'nowrap', height: 30.68 }}>
           <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>Total Deductions</p>
-          <p style={{ ...S, fontWeight: 700, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>-₦246,750</p>
+          <p style={{ ...S, fontWeight: 700, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>-₹246,750</p>
         </div>
         <Divider />
       </div>
@@ -176,7 +176,7 @@ function PayslipReceipt() {
       {/* Net Pay */}
       <div style={{ position: 'absolute', left: 24.55, top: 921.14, width: 691.9, background: 'linear-gradient(174.4deg, rgba(93,208,231,0.15) 25%, rgba(115,0,255,0.15) 106%)', borderRadius: 18.41, padding: 24.55, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <p style={{ ...S, fontWeight: 500, fontSize: 21.48, lineHeight: '30.68px', letterSpacing: '-0.31px', color: '#181b25' }}>Net Pay</p>
-        <p style={{ ...S, fontWeight: 700, fontSize: 24.547, lineHeight: '33.75px', letterSpacing: '-0.31px', color: '#181b25', whiteSpace: 'nowrap' }}>₦1,018,250</p>
+        <p style={{ ...S, fontWeight: 700, fontSize: 24.547, lineHeight: '33.75px', letterSpacing: '-0.31px', color: '#181b25', whiteSpace: 'nowrap' }}>₹1,018,250</p>
       </div>
     </div>
   )
@@ -433,7 +433,7 @@ export function PrinterAnimation() {
                   color: '#5c5c5c', margin: 0, textAlign: 'center',
                   fontFeatureSettings: "'calt' 0, 'liga' 0",
                 }}>
-                  Your payment for Amina Okafor was successful, now let's roll
+                  Your payment for Dikhsit Bhattarai was successful, now let's roll
                 </p>
               </div>
               {/* Slide button */}
