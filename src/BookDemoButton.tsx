@@ -1,0 +1,125 @@
+import React from "react";
+
+function cn(...classes: (string | undefined | false | null)[]) {
+  return classes.filter(Boolean).join(" ");
+}
+
+export type BookDemoVariant =
+  | "lime"
+  | "sky"
+  | "rose"
+  | "amber"
+  | "emerald"
+  | "violet"
+  | "orange"
+  | "magenta";
+
+interface BookDemoButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: BookDemoVariant;
+}
+
+const variantStyles: Record<
+  BookDemoVariant,
+  { from: string; to: string; dot: string }
+> = {
+  lime: { from: "#d6f54a", to: "#c5ea2c", dot: "#0f0f0f" },
+  sky: { from: "#a5e0ff", to: "#6bc8f5", dot: "#0a1f3a" },
+  rose: { from: "#ffc4d3", to: "#f590a5", dot: "#3a0a1f" },
+  amber: { from: "#ffd66e", to: "#f5a82e", dot: "#3a210a" },
+  emerald: { from: "#a8efc5", to: "#5fd49a", dot: "#0a2a1a" },
+  violet: { from: "#d4b9ff", to: "#a07bf5", dot: "#1f0a3a" },
+  orange: { from: "#ffb88a", to: "#f57a3a", dot: "#3a190a" },
+  magenta: { from: "#f5a8e0", to: "#e060c5", dot: "#3a0a2a" },
+};
+
+const DoubleChevron = ({ index, color }: { index: number; color: string }) => {
+  const base = index * 0.12;
+  const dots: { cx: number; cy: number; d: number }[] = [
+    { cx: 2, cy: 2, d: 0 },
+    { cx: 5, cy: 5, d: 0.05 },
+    { cx: 8, cy: 8, d: 0.1 },
+    { cx: 5, cy: 11, d: 0.15 },
+    { cx: 2, cy: 14, d: 0.2 },
+    { cx: 6, cy: 2, d: 0.05 },
+    { cx: 9, cy: 5, d: 0.1 },
+    { cx: 12, cy: 8, d: 0.15 },
+    { cx: 9, cy: 11, d: 0.2 },
+    { cx: 6, cy: 14, d: 0.25 },
+  ];
+  return (
+    <svg
+      width="14"
+      height="16"
+      viewBox="0 0 14 16"
+      className="shrink-0 overflow-visible"
+    >
+      <g fill={color}>
+        {dots.map((p, i) => (
+          <circle
+            key={i}
+            cx={p.cx}
+            cy={p.cy}
+            r="1"
+            className="bd-dot"
+            style={{ animationDelay: `${base + p.d}s` }}
+          />
+        ))}
+      </g>
+    </svg>
+  );
+};
+
+const BookDemoButton = React.forwardRef<HTMLButtonElement, BookDemoButtonProps>(
+  ({ className, children, variant = "lime", ...props }, ref) => {
+    const v = variantStyles[variant];
+    return (
+      <button
+        ref={ref}
+        className={cn(
+          "group/btn relative inline-flex h-12 w-44 rounded-[14px] overflow-hidden transition-transform active:scale-[0.98]",
+          className,
+        )}
+        style={{
+          background: "linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)",
+          boxShadow:
+            "inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 12px rgba(0,0,0,0.18)",
+        }}
+        {...props}
+      >
+        <style>{`
+          @keyframes bd-dot-wave {
+            0%, 70%, 100% { opacity: 0.25; transform: scale(0.85); }
+            35% { opacity: 1; transform: scale(1); }
+          }
+          .bd-dot {
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: bd-dot-wave 1.4s ease-in-out infinite;
+          }
+        `}</style>
+
+        <span className="absolute inset-y-0 left-10 right-0 flex items-center justify-center text-white font-medium text-[15px] tracking-tight">
+          {children || "Book a demo"}
+        </span>
+
+        <span
+          className="absolute top-1 left-1 bottom-1 z-10 w-9 group-hover/btn:w-[calc(100%-0.5rem)] flex items-center justify-start overflow-hidden rounded-[10px] pl-3 pr-2.5 gap-2.5 transition-[width,gap] duration-200 ease-[cubic-bezier(0.65,0,0.35,1)]"
+          style={{
+            background: `linear-gradient(180deg, ${v.from} 0%, ${v.to} 100%)`,
+            boxShadow:
+              "inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08)",
+          }}
+        >
+          {Array.from({ length: 9 }, (_, i) => (
+            <DoubleChevron key={i} index={i} color={v.dot} />
+          ))}
+        </span>
+      </button>
+    );
+  },
+);
+
+BookDemoButton.displayName = "BookDemoButton";
+
+export default BookDemoButton;

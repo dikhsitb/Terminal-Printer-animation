@@ -4,6 +4,7 @@ import gsap from 'gsap'
 import receiptBgUrl from './assets/receipt_bg.svg'
 import billBgUrl from './assets/Bill.svg'
 import receiptDividerUrl from './assets/receipt_divider.svg'
+import BookDemoButton from './BookDemoButton'
 import printSoundUrl from './assets/print-sound.mp3'
 
 // Receipt background variants — swap RECEIPT_BG to A/B compare the two assets.
@@ -221,122 +222,7 @@ function ReceiptContent() {
   )
 }
 
-// ─── Slide-to-print button ──────────────────────────────────
-// The handle stays anchored at left=2px and GROWS wider as the user drags right.
-// 8 chevron icons are packed left inside (overflow: hidden reveals them progressively).
-// Icon math:  16px pad + n×(20px icon + 16px gap) — clipped at right edge
-//   width=52  → 1 icon visible (centered in rest pill)
-//   width=112 → 3 icons visible  (Figma 298015)
-//   width=231 → 6 icons visible  (Figma 298115)
-//   width=322 → 8 icons visible  (Figma 298191 / 297207)
-const TRACK_W      = 326
-const HANDLE_W     = 52               // resting handle width
-const HANDLE_P     = 2
-const SLID_W       = TRACK_W - HANDLE_P * 2   // 322
-const MAX_GROW     = SLID_W - HANDLE_W         // 270
-const TRIGGER_GROW = MAX_GROW * 0.82           // ~221
-const EASE         = 'cubic-bezier(0.25, 0, 0.35, 1)'
-
-function SlideButton({ onComplete }: { onComplete: () => void }) {
-  const [handleW, setHandleW] = useState(HANDLE_W)
-  const [dragging, setDragging] = useState(false)
-  const [isSlid, setIsSlid]    = useState(false)
-  const isDragging = useRef(false)
-  const startPtr   = useRef(0)
-  const startW     = useRef(HANDLE_W)
-  const triggered  = useRef(false)
-
-  const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (triggered.current) return
-    isDragging.current = true
-    setDragging(true)
-    startPtr.current = e.clientX
-    startW.current   = handleW
-    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
-  }
-
-  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging.current || triggered.current) return
-    const delta = e.clientX - startPtr.current
-    const nw = Math.max(HANDLE_W, Math.min(SLID_W, startW.current + delta))
-    setHandleW(nw)
-    if (nw - HANDLE_W >= TRIGGER_GROW) {
-      isDragging.current = false
-      triggered.current  = true
-      setDragging(false)
-      setIsSlid(true)
-      setTimeout(onComplete, 500)
-    }
-  }
-
-  const onUp = () => {
-    if (!isDragging.current) return
-    isDragging.current = false
-    setDragging(false)
-    setHandleW(HANDLE_W) // snap back to rest
-  }
-
-  return (
-    <div style={{ position: 'relative', width: TRACK_W, height: 44, flexShrink: 0 }}>
-
-      {/* ── Track ──────────────────────────────────────────── */}
-      <div style={{
-        position: 'absolute', inset: 0, borderRadius: 24, overflow: 'hidden',
-        background: 'linear-gradient(180deg, rgba(255,255,255,0.154) 6.67%, rgba(255,255,255,0) 103.33%), rgb(247,247,247)',
-        boxShadow: '0 0 0 0.3px #ebebeb, 0 1px 3px -1.5px rgba(51,51,51,0.16)',
-      }}>
-        <div style={{ position: 'absolute', inset: 0, borderRadius: 24, boxShadow: 'inset 0 0 2px 1px rgba(255,255,255,0.16)', pointerEvents: 'none' }} />
-      </div>
-
-      {/* Label — centered in track, handle covers it as it grows from the left */}
-      {!isSlid && (
-        <p style={{
-          position: 'absolute', inset: 0, margin: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          ...INTER, fontWeight: 500, fontSize: 14, letterSpacing: '-0.084px', lineHeight: '20px',
-          color: '#5c5c5c', fontFeatureSettings: "'calt' 0, 'liga' 0",
-          pointerEvents: 'none', whiteSpace: 'nowrap',
-        }}>
-          Slide To print pay slip
-        </p>
-      )}
-
-      {/* ── Handle — always at left=2px, grows wider on drag ── */}
-      <div
-        onPointerDown={onDown}
-        onPointerMove={onMove}
-        onPointerUp={onUp}
-        onPointerCancel={onUp}
-        style={{
-          position: 'absolute', top: HANDLE_P, left: HANDLE_P,
-          width: isSlid ? SLID_W : handleW,
-          height: 40,
-          borderRadius: 24, overflow: 'hidden',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.154) 6.67%, rgba(255,255,255,0) 103.33%), #171717',
-          boxShadow: '0 0 0 0.75px #171717, 0 16px 8px -8px rgba(51,51,51,0.01), 0 12px 6px -6px rgba(51,51,51,0.02), 0 5px 5px -2.5px rgba(51,51,51,0.08), 0 1px 3px -1.5px rgba(51,51,51,0.16)',
-          cursor: triggered.current ? 'default' : 'grab',
-          // Left-aligned during drag (reveals icons progressively), centered when fully slid
-          display: 'flex', alignItems: 'center', justifyContent: isSlid ? 'center' : 'flex-start',
-          padding: '8px 16px', gap: 16, boxSizing: 'border-box',
-          userSelect: 'none', touchAction: 'none',
-          transition: isSlid
-            ? `width 0.42s ${EASE}`
-            : dragging ? 'none' : `width 0.3s ${EASE}`,
-        }}
-      >
-        {/* 8 icons always mounted — overflow clips them until handle is wide enough */}
-        {Array.from({ length: 8 }, (_, i) => (
-          <svg key={i} width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
-            <path d="M6 6.5l3.5 3.5L6 13.5M10.5 6.5l3.5 3.5-3.5 3.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        ))}
-        {/* Inset highlight */}
-        <div style={{ position: 'absolute', inset: 0, borderRadius: 24, boxShadow: 'inset 0 1px 2px 0 rgba(255,255,255,0.16)', pointerEvents: 'none' }} />
-      </div>
-
-    </div>
-  )
-}
+// Slide-to-print control replaced by the click-to-print <BookDemoButton /> (see ./BookDemoButton).
 
 // ─── Main export ────────────────────────────────────────────
 export function PrinterAnimation() {
@@ -464,7 +350,7 @@ export function PrinterAnimation() {
               style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 39 }}
             >
               {/* Slide button */}
-              <SlideButton onComplete={startPrint} />
+              <BookDemoButton variant="emerald" onClick={startPrint}>Click to Print</BookDemoButton>
             </motion.div>
           )}
 
