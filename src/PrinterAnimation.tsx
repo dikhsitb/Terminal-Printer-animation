@@ -248,13 +248,13 @@ export function PrinterAnimation() {
     gsap.to(el, { autoAlpha: 1, duration: 0.45, ease: 'power2.out', delay: T.printerDelay + 0.2 })
   }, [])
 
-  const startPrint = useCallback(() => {
-    if (phase !== 'idle') return
-    setPhase('printing')
-    playPrintSound(T.feedDelay + T.feedDuration + 0.1)
-
+  // Tuck the receipt back into the printer and feed it out again. Reusable by
+  // both the initial "Click to Print" and the "Print Again" controls.
+  const runPrint = useCallback(() => {
     const el = receiptRef.current
     if (!el) return
+    setPhase('printing')
+    playPrintSound(T.feedDelay + T.feedDuration + 0.1)
 
     tlRef.current?.kill()
     gsap.set(el, { y: RECEIPT_INIT_Y })
@@ -263,13 +263,15 @@ export function PrinterAnimation() {
     const tl = gsap.timeline()
     tl.to(el, { y: 0, duration: T.feedDuration, ease: 'power2.out', delay: T.feedDelay, onComplete: () => setPhase('done') })
     tlRef.current = tl
-  }, [phase])
-
-  const replay = useCallback(() => {
-    tlRef.current?.kill()
-    if (receiptRef.current) gsap.set(receiptRef.current, { y: RECEIPT_INIT_Y })
-    setPhase('idle')
   }, [])
+
+  const startPrint = useCallback(() => {
+    if (phase !== 'idle') return
+    runPrint()
+  }, [phase, runPrint])
+
+  // "Print Again" restarts the print directly (skips the idle "Click to Print").
+  const replay = runPrint
 
   return (
     <div style={{
