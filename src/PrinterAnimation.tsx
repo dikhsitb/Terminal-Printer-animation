@@ -67,6 +67,15 @@ const CONTENT_MT_DONE = R_TOP + R_H - BODY_H + T.floatY + 24  // 533
 
 // ─── Colors ────────────────────────────────────────────────
 const PAGE_BG = '#ffffff'
+// Dot-mesh page texture: gray-950 @ 5%, 1px dots on a 10px grid. Uses a
+// viewport-fixed attachment so the pattern aligns across the page and the
+// receipt mask (keeping the mask seamless as the receipt prints).
+const DOT_BG: React.CSSProperties = {
+  background: PAGE_BG,
+  backgroundImage: 'radial-gradient(rgba(3,7,18,0.05) 1px, transparent 0)',
+  backgroundSize: '10px 10px',
+  backgroundAttachment: 'fixed',
+}
 
 const SATOSHI: React.CSSProperties = { fontFamily: "'Satoshi', sans-serif" }
 const INTER:   React.CSSProperties = { fontFamily: "'Inter', sans-serif" }
@@ -267,7 +276,7 @@ export function PrinterAnimation() {
       minHeight: '100vh',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       paddingTop: 72, paddingBottom: 60,
-      background: PAGE_BG,
+      ...DOT_BG,
     }}>
 
       {/* ── Printer + receipt assembly ─────────────────────── */}
@@ -277,7 +286,7 @@ export function PrinterAnimation() {
         <div style={{
           position: 'absolute', top: -600, left: -120,
           width: PW + 240, height: 600,
-          background: PAGE_BG, zIndex: 15, pointerEvents: 'none',
+          ...DOT_BG, zIndex: 15, pointerEvents: 'none',
         }} />
 
         {/* Receipt: z:10, starts tucked into the printer (only bottom scallop peeks).
