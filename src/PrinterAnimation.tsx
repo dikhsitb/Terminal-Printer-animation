@@ -1,4 +1,4 @@
-import { useCallback, useRef, useLayoutEffect, useState } from 'react'
+import { useCallback, useRef, useLayoutEffect, useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import gsap from 'gsap'
 import receiptBgUrl from './assets/receipt_bg.svg'
@@ -79,6 +79,31 @@ const DOT_BG: React.CSSProperties = {
 }
 
 const SATOSHI: React.CSSProperties = { fontFamily: "'Satoshi', sans-serif" }
+
+// ─── Responsive scaling ────────────────────────────────────
+// The whole stage is authored at PW=460. On narrow viewports (phones) that
+// overflows and looks off-center, so we scale the entire assembly down to fit
+// the available width while keeping every internal proportion (and the GSAP /
+// Framer transforms) intact. Capped at 1 so desktop is pixel-identical.
+const STAGE_SIDE_GUTTER = 16 // px of breathing room on each side
+
+function useStageScale() {
+  const [scale, setScale] = useState(1)
+  useLayoutEffect(() => {
+    const compute = () => {
+      const avail = window.innerWidth - STAGE_SIDE_GUTTER * 2
+      setScale(Math.min(1, avail / PW))
+    }
+    compute()
+    window.addEventListener('resize', compute)
+    window.addEventListener('orientationchange', compute)
+    return () => {
+      window.removeEventListener('resize', compute)
+      window.removeEventListener('orientationchange', compute)
+    }
+  }, [])
+  return scale
+}
 
 // ─── Sound ─────────────────────────────────────────────────
 const PRINT_VOLUME = 0.35   // reduced playback volume
@@ -239,6 +264,21 @@ export function PrinterAnimation() {
   const receiptRef = useRef<HTMLDivElement>(null)
   const tlRef      = useRef<gsap.core.Timeline | null>(null)
 
+  // Responsive scale + a measured height so the scaled stage collapses its
+  // box (no dead space below) and stays centered on phones.
+  const scale = useStageScale()
+  const stageRef = useRef<HTMLDivElement>(null)
+  const [stageHeight, setStageHeight] = useState<number | null>(null)
+  useEffect(() => {
+    const el = stageRef.current
+    if (!el) return
+    const measure = () => setStageHeight(el.offsetHeight)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   // Tuck the receipt into the printer before first paint, then reveal it only
   // after the printer has animated in (so the printer loads before the bill).
   useLayoutEffect(() => {
@@ -278,7 +318,17 @@ export function PrinterAnimation() {
       minHeight: '100vh',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       paddingTop: 72, paddingBottom: 60,
+      overflowX: 'hidden',
       ...DOT_BG,
+    }}>
+
+    {/* Scaled-footprint wrapper: collapses to the stage's scaled height and is
+        centered on the page; the inner stage scales around its top-center. */}
+    <div style={{ width: PW, height: stageHeight != null ? stageHeight * scale : undefined }}>
+    <div ref={stageRef} style={{
+      width: PW,
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      transform: `scale(${scale})`, transformOrigin: 'top center',
     }}>
 
       {/* ── Printer + receipt assembly ─────────────────────── */}
@@ -430,6 +480,8 @@ export function PrinterAnimation() {
         </AnimatePresence>
       </motion.div>
 
+    </div>
+    </div>
     </div>
   )
 }
