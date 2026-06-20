@@ -5,6 +5,7 @@ import receiptBgUrl from './assets/receipt_bg.svg'
 import billBgUrl from './assets/Bill.svg'
 import receiptDividerUrl from './assets/receipt_divider.svg'
 import BookDemoButton from './BookDemoButton'
+import ShinyButton from './ShinyButton'
 import printSoundUrl from './assets/print-sound.mp3'
 
 // Receipt background variants — swap RECEIPT_BG to A/B compare the two assets.
@@ -78,7 +79,6 @@ const DOT_BG: React.CSSProperties = {
 }
 
 const SATOSHI: React.CSSProperties = { fontFamily: "'Satoshi', sans-serif" }
-const INTER:   React.CSSProperties = { fontFamily: "'Inter', sans-serif" }
 
 // ─── Sound ─────────────────────────────────────────────────
 const PRINT_VOLUME = 0.35   // reduced playback volume
@@ -306,6 +306,7 @@ export function PrinterAnimation() {
 
         {/* Printer body: z:20, covers receipt origin → slot illusion */}
         <motion.div
+          className="printer-shine"
           initial={{ opacity: 0, y: 28, scale: 0.88 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: 'spring', stiffness: 200, damping: 22, delay: T.printerDelay }}
@@ -314,6 +315,20 @@ export function PrinterAnimation() {
             filter: 'drop-shadow(0 24px 52px rgba(110,210,130,0.30)) drop-shadow(0 6px 16px rgba(0,0,0,0.10))',
           }}
         >
+          <style>{`
+            .printer-shine-bar {
+              opacity: 0;
+              transform-box: fill-box;
+              transform-origin: center;
+            }
+            .printer-shine:hover .printer-shine-bar {
+              animation: printer-shine-sweep 0.7s ease-out;
+            }
+            @keyframes printer-shine-sweep {
+              0%   { opacity: 1; transform: translateX(-380px) rotate(20deg); }
+              100% { opacity: 1; transform: translateX(1180px) rotate(20deg); }
+            }
+          `}</style>
           <svg width={PW} height={BODY_H} viewBox="0 0 915 273" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
             <defs>
               <linearGradient id="printerBodyGrad" x1="0" y1="0" x2="0" y2="273" gradientUnits="userSpaceOnUse">
@@ -332,12 +347,24 @@ export function PrinterAnimation() {
                 <stop offset="95%"  stopColor="rgba(0,0,0,0)" />
                 <stop offset="100%" stopColor="rgba(0,0,0,0.13)" />
               </linearGradient>
+              <linearGradient id="printerShine" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%"   stopColor="white" stopOpacity="0" />
+                <stop offset="50%"  stopColor="white" stopOpacity="0.55" />
+                <stop offset="100%" stopColor="white" stopOpacity="0" />
+              </linearGradient>
+              <clipPath id="printerClip">
+                <path d="M6.453 37.318C14.594 15.499 38.726 0.953984 61.536 0.895984C108.174 0.776984 154.813 0.878974 201.452 0.885974L480.59 0.896991L730.13 0.891986C771.31 0.888986 812.84 0.670002 854.03 0.959002C860.55 1.005 867.79 2.18498 873.9 4.43398C888.87 9.83798 900.99 21.132 907.42 35.692C915.2 47.969 914.97 85.885 913.63 100.47C913.68 113.99 914.87 170.736 912.15 180.64C910.61 203.777 911.67 245.055 894.29 261.033C879.54 274.596 856.57 272.256 837.84 272.04L837.83 256.793L837.82 245.209L79.047 245.216L79.05 256.901L79.092 272.008C66.206 272.223 52.641 273.578 40.869 268.495C13.146 256.739 13.016 222.537 8.55298 196.177C-2.92702 174.888 1.21802 120.221 1.30902 94.199C0.445022 78.162 -0.093996 51.577 6.453 37.318Z" />
+              </clipPath>
             </defs>
             <path d="M6.453 37.318C14.594 15.499 38.726 0.953984 61.536 0.895984C108.174 0.776984 154.813 0.878974 201.452 0.885974L480.59 0.896991L730.13 0.891986C771.31 0.888986 812.84 0.670002 854.03 0.959002C860.55 1.005 867.79 2.18498 873.9 4.43398C888.87 9.83798 900.99 21.132 907.42 35.692C915.2 47.969 914.97 85.885 913.63 100.47C913.68 113.99 914.87 170.736 912.15 180.64C910.61 203.777 911.67 245.055 894.29 261.033C879.54 274.596 856.57 272.256 837.84 272.04L837.83 256.793L837.82 245.209L79.047 245.216L79.05 256.901L79.092 272.008C66.206 272.223 52.641 273.578 40.869 268.495C13.146 256.739 13.016 222.537 8.55298 196.177C-2.92702 174.888 1.21802 120.221 1.30902 94.199C0.445022 78.162 -0.093996 51.577 6.453 37.318Z" fill="url(#printerBodyGrad)" />
             <path d="M6.453 37.318C14.594 15.499 38.726 0.953984 61.536 0.895984C108.174 0.776984 154.813 0.878974 201.452 0.885974L480.59 0.896991L730.13 0.891986C771.31 0.888986 812.84 0.670002 854.03 0.959002C860.55 1.005 867.79 2.18498 873.9 4.43398C888.87 9.83798 900.99 21.132 907.42 35.692C915.2 47.969 914.97 85.885 913.63 100.47C913.68 113.99 914.87 170.736 912.15 180.64C910.61 203.777 911.67 245.055 894.29 261.033C879.54 274.596 856.57 272.256 837.84 272.04L837.83 256.793L837.82 245.209L79.047 245.216L79.05 256.901L79.092 272.008C66.206 272.223 52.641 273.578 40.869 268.495C13.146 256.739 13.016 222.537 8.55298 196.177C-2.92702 174.888 1.21802 120.221 1.30902 94.199C0.445022 78.162 -0.093996 51.577 6.453 37.318Z" fill="url(#printerSatin)" />
             <path d="M6.453 37.318C14.594 15.499 38.726 0.953984 61.536 0.895984C108.174 0.776984 154.813 0.878974 201.452 0.885974L480.59 0.896991L730.13 0.891986C771.31 0.888986 812.84 0.670002 854.03 0.959002C860.55 1.005 867.79 2.18498 873.9 4.43398C888.87 9.83798 900.99 21.132 907.42 35.692C915.2 47.969 914.97 85.885 913.63 100.47C913.68 113.99 914.87 170.736 912.15 180.64C910.61 203.777 911.67 245.055 894.29 261.033C879.54 274.596 856.57 272.256 837.84 272.04L837.83 256.793L837.82 245.209L79.047 245.216L79.05 256.901L79.092 272.008C66.206 272.223 52.641 273.578 40.869 268.495C13.146 256.739 13.016 222.537 8.55298 196.177C-2.92702 174.888 1.21802 120.221 1.30902 94.199C0.445022 78.162 -0.093996 51.577 6.453 37.318Z" fill="url(#printerEdge)" />
             <path d="M12.185 198.952C18.021 204.52 21.809 209.803 29 214.484C51.911 229.399 87.703 224.591 114.766 224.601L228.8 224.578L581.68 224.561L776.5 224.574L826.74 224.712C860.57 224.809 886.81 226.691 906.02 192.246C908.2 188.344 909.55 184.247 912.15 180.64C910.61 203.777 911.67 245.055 894.29 261.033C879.54 274.596 856.57 272.256 837.84 272.04L837.83 256.793L837.82 245.209L79.047 245.216L79.05 256.901L79.092 272.008C66.206 272.223 52.641 273.578 40.869 268.495C13.146 256.739 13.016 222.537 8.55298 196.177L10.074 195.805C11.138 197.159 11.572 197.418 12.185 198.952Z" fill="rgba(0,0,0,0.07)" />
             <path d="M79.05 256.901C70.623 257.056 63.632 258.241 57.038 251.901C47.845 243.062 58.301 234.462 67.603 234.216C85.768 233.736 104.006 233.979 122.182 234.024L230.618 234.086L692.27 234.076L806.7 234.074C820.89 234.074 836.81 233.625 850.99 234.535C856.65 234.897 863.08 242.207 860.14 247.942C855.66 258.055 846.8 257.139 837.83 256.793L837.82 245.209L79.047 245.216L79.05 256.901Z" fill="#060614" />
+            {/* Hover shine — diagonal bar swept across, clipped to the printer body */}
+            <g clipPath="url(#printerClip)">
+              <rect className="printer-shine-bar" x="0" y="-200" width="150" height="673" fill="url(#printerShine)" style={{ pointerEvents: 'none' }} />
+            </g>
           </svg>
         </motion.div>
       </div>
@@ -376,44 +403,26 @@ export function PrinterAnimation() {
           {(phase === 'done') && (
             <motion.div
               key="done"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ duration: 0.4, delay: 0.2 }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}
             >
-              {/* "Payment successful" text — shown after printing completes */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'center', width: '100%' }}>
-                <h1 style={{
-                  ...INTER, fontWeight: 600, fontSize: 24,
-                  lineHeight: 1, letterSpacing: '-0.2px',
-                  color: '#171717', margin: 0, textAlign: 'center',
-                  fontFeatureSettings: "'ss11' 1, 'calt' 0, 'liga' 0",
-                  textWrap: 'balance',
-                } as React.CSSProperties}>
-                  Payment successful
-                </h1>
-                <p style={{
-                  ...INTER, fontWeight: 400, fontSize: 14,
-                  lineHeight: '22px', letterSpacing: '-0.084px',
-                  color: '#5c5c5c', margin: 0, textAlign: 'center',
-                  fontFeatureSettings: "'calt' 0, 'liga' 0",
-                }}>
-                  Your payment for Dikhsit Bhattarai was successful, now let's roll
-                </p>
-              </div>
-              <motion.button
-                onClick={replay}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
+              {/* "Payment successful" — fades in from below after printing completes */}
+              <motion.h1
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 style={{
-                  ...SATOSHI, background: 'none',
-                  border: '1px solid #e1e4ea', borderRadius: 6,
-                  padding: '9px 28px', fontSize: 12, fontWeight: 500,
-                  letterSpacing: '-0.2px', color: '#525866', cursor: 'pointer',
-                }}
+                  ...SATOSHI, fontWeight: 600, fontSize: 24,
+                  lineHeight: 1, letterSpacing: 0,
+                  color: '#171717', margin: 0, textAlign: 'center',
+                  textWrap: 'balance',
+                } as React.CSSProperties}
               >
-                Print Again
-              </motion.button>
+                Payment successful
+              </motion.h1>
+              <ShinyButton onClick={replay}>Print Again</ShinyButton>
             </motion.div>
           )}
         </AnimatePresence>
