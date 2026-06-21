@@ -138,6 +138,15 @@ audio dependencies beyond the two above.
 
 ---
 
+## Credits
+
+- **Buttons, hover animations, and the dot-mesh background** are based on
+  components from [**Pixel Perfect UI**](https://www.pixel-perfect.space/) — a
+  lightweight React component library for modern web apps (React, Next.js,
+  Tailwind CSS, Framer Motion, GSAP).
+
+---
+
 ## Project structure
 
 ```

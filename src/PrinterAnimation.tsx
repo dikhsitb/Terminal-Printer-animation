@@ -438,7 +438,7 @@ export function PrinterAnimation() {
               style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 39 }}
             >
               {/* Slide button */}
-              <BookDemoButton variant="emerald" onClick={startPrint}>Click to Print</BookDemoButton>
+              <BookDemoButton variant="emerald" onClick={startPrint}>Slide to print</BookDemoButton>
             </motion.div>
           )}
 
